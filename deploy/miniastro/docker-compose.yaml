@@ -17,7 +17,7 @@ services:
       GITEA__server__ROOT_URL: http://${GIT_DOMAIN}:${GIT_PORT_HTTP}/
       GITEA__mirror__DEFAULT_INTERVAL: 10m
       GITEA__mirror__MIN_INTERVAL: 1m
-      GITEA__webhook_ALLOWED_HOST_LIST: "*"
+      GITEA__webhook__ALLOWED_HOST_LIST: "*"
       # GITEA__database__DB_TYPE: mysql
       # GITEA__database__HOST: ${DB_URL}
       # GITEA__database__NAME: gitea
