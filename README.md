@@ -4,7 +4,7 @@
 
 包含：
 
-- 容器管理  https://www.portainer.io/
+- 容器管理  https://www.portainer.io/ 
 - 代码仓库  https://gitea.com/
 - 持续集成 https://www.drone.io/
 
@@ -15,7 +15,7 @@ Unix-like system, 如 ubuntu server
 需要安装
 
 - git 
-- docker
+- docker 
 - docker-compose
 
 在ubuntu环境下，安装脚本如下
@@ -113,4 +113,8 @@ cd ~/work/devastro/deploy/miniastro
 
 ## 执行持续集成
 
-xxx
+
+
+
+
+

@@ -14,6 +14,7 @@ services:
       USER_GID: 1000
       GITEA__server__DOMAIN: ${GIT_DOMAIN}
       GITEA__server__SSH_DOMAIN: ${GIT_DOMAIN}
+      GITEA__server__SSH_PORT: ${GIT_PORT_SSH}
       GITEA__server__ROOT_URL: http://${GIT_DOMAIN}:${GIT_PORT_HTTP}/
       GITEA__mirror__DEFAULT_INTERVAL: 10m
       GITEA__mirror__MIN_INTERVAL: 1m
@@ -27,6 +28,7 @@ services:
       - ${VOLUMES}/gitea:/data
     ports:
       - ${HOST}:${GIT_PORT_HTTP}:3000
+      - ${HOST}:${GIT_PORT_SSH}:22
     deploy:
       mode: replicated
       replicas: 1
@@ -100,15 +102,37 @@ services:
       mode: replicated
       replicas: 1
 
-### zk ####
-  zk:
+### zk1 ####
+  zk0:
     networks:
       - net0
     image: zookeeper
     ports:
-      - "${HOST}:${ZK_PORT}:2181"
+      - "${HOST}:${ZK0_PORT}:2181"
     volumes:
-      - ${VOLUMES}/zk:/data
+      - ${VOLUMES}/zk0:/data
+    environment:
+      - TZ=Asia/Shanghai
+      - ZOO_LOG4J_PROP=INFO,ROLLINGFILE
+  zk1:
+    networks:
+      - net0
+    image: zookeeper
+    ports:
+      - "${HOST}:${ZK1_PORT}:2181"
+    volumes:
+      - ${VOLUMES}/zk1:/data
+    environment:
+      - TZ=Asia/Shanghai
+      - ZOO_LOG4J_PROP=INFO,ROLLINGFILE
+  zk2:
+    networks:
+      - net0
+    image: zookeeper
+    ports:
+      - "${HOST}:${ZK2_PORT}:2181"
+    volumes:
+      - ${VOLUMES}/zk2:/data
     environment:
       - TZ=Asia/Shanghai
       - ZOO_LOG4J_PROP=INFO,ROLLINGFILE

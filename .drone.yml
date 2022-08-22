@@ -1,0 +1,83 @@
+kind: pipeline
+type: docker
+name: default
+
+clone:
+  disable: true
+
+environment:
+  APP_NAME: demo
+  BIND_HTTP_PORT: 8888
+  BIND_DEBUG_PORT: 18888
+  PROFILE: dev
+
+steps:
+  - name: greeting
+    image: alpine
+    commands:
+      - echo hello world
+      - env
+  - name: clone
+    image: alpine/git
+    commands:
+      - echo "$HOST git.me" >> /etc/hosts
+      - cat /etc/hosts
+      - git clone $CI_REMOTE_URL .
+      - git checkout $DRONE_COMMIT
+    depends_on:
+      - greeting
+  - name: compile
+    image: maven
+    commands:
+      - mvn -Dmaven.repo.local=/data/.m2/repository -DskipTests clean install
+    depends_on:
+      - clone
+  - name: build
+    image: docker
+    volumes:
+      - name: dockersock
+        path: /var/run/docker.sock
+    commands:
+      - env; pwd; ls -l
+      - cd demo
+#      - echo $APP_NAME; docker build --build-arg APP_NAME=$APP_NAME -t $APP_NAME:latest .
+      - echo $APP_NAME; docker build -t $APP_NAME:$CI_COMMIT_BRANCH .
+    depends_on:
+      - compile
+  - name: start
+    image: docker
+    volumes:
+      - name: dockersock
+        path: /var/run/docker.sock
+    commands:
+      - env; pwd; ls -l
+      - docker rm -f ${APP_NAME}_${CI_COMMIT_BRANCH}
+      - docker run --name ${APP_NAME}_${CI_COMMIT_BRANCH} -d -p $BIND_HTTP_PORT:8080 -p $BIND_DEBUG_PORT:18000 $APP_NAME:$CI_COMMIT_BRANCH
+#      - docker logs -f $APP_NAME
+    depends_on:
+      - build
+  - name: health_check
+#    image: curlimages/curl
+    image: docker
+    commands:
+      - env
+#      - HEALTH_CHECK_URL="http://$HOST:$BIND_HTTP_PORT/health";while true;do i=$((i+1));echo "try health check,$i times. $HEALTH_CHECK_URL";sleep 1;status_code=`curl --write-out %{http_code} --silent --output /dev/null $HEALTH_CHECK_URL`;if [[ '200' == $status_code ]];then ps -eo pid,command | grep "docker logs" | grep -v grep | awk '{system("kill -9 " $1)}';exit 0;fi;done
+      - while true;do i=$((i+1));echo "try health check,$i times.";sleep 1; docker logs --since=1s $APP_NAME; if docker logs $APP_NAME | grep Started | grep "JVM running for"; then exit 0;fi;done
+    volumes:
+      - name: dockersock
+        path: /var/run/docker.sock
+    depends_on:
+      - start
+  - name: cleanup
+    image: docker
+    volumes:
+      - name: dockersock
+        path: /var/run/docker.sock
+    commands:
+      - docker image prune -a
+    depends_on:
+      - health_check
+volumes:
+  - name: dockersock
+    host:
+      path: /var/run/docker.sock
